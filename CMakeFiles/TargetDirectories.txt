@@ -1,0 +1,6 @@
+/Users/tgr/Downloads/CompressApp/CMakeFiles/CompressApp.dir
+/Users/tgr/Downloads/CompressApp/CMakeFiles/rebuild_cache.dir
+/Users/tgr/Downloads/CompressApp/CMakeFiles/edit_cache.dir
+/Users/tgr/Downloads/CompressApp/CMakeFiles/filepack.dir
+/Users/tgr/Downloads/CompressApp/CMakeFiles/CompressApp_autogen.dir
+/Users/tgr/Downloads/CompressApp/CMakeFiles/filepack_autogen.dir
