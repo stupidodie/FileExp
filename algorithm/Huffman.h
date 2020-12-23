@@ -1,7 +1,3 @@
-//
-// Created by tgr on 2020/11/13.
-//
-
 #ifndef FILEPACK_HUFFMAN_H
 #define FILEPACK_HUFFMAN_H
 

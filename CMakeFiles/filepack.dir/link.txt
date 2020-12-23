@@ -1,0 +1,2 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc libfilepack.a CMakeFiles/filepack.dir/filepack_autogen/mocs_compilation.cpp.o CMakeFiles/filepack.dir/algorithm/Huffman.cpp.o CMakeFiles/filepack.dir/algorithm/Pack.cpp.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libfilepack.a

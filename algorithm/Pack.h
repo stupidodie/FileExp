@@ -1,7 +1,3 @@
-//
-// Created by tgr on 2020/11/10.
-//
-
 #ifndef FILEPACK_PACK_H
 #define FILEPACK_PACK_H
 
