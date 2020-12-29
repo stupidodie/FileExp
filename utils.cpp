@@ -1,4 +1,8 @@
 #include "utils.h"
+#include <cstdlib>
+#include <QFile>
+#include <QString>
+#include <QCryptographicHash>
 
 bool qCopyDirectory(const QDir &fromDir, const QDir &toDir, bool bCoverIfFileExists)
 {
@@ -31,4 +35,15 @@ bool qCopyDirectory(const QDir &fromDir, const QDir &toDir, bool bCoverIfFileExi
     }
     return true;
 }
+
+
+QString getSha1sum(const QString& fullFIleName){
+            QFile theFile(fullFIleName);
+            theFile.open(QIODevice::ReadOnly);
+           QByteArray ba = QCryptographicHash::hash(theFile.readAll(), QCryptographicHash::Sha1);
+                theFile.close();
+                return  ba.toHex().constData();
+}
+
+
 

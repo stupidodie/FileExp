@@ -31,7 +31,7 @@ private slots:
 
     void on_compressFileBtn_clicked();
 
-    static bool packAndCompress(const std::vector<std::string> &fileList,const std::vector<std::string> &folderList, const std::string &targetFileName,const std::string &password, bool compress);
+    static QString packAndCompress(const std::vector<std::string> &fileList,const std::vector<std::string> &folderList, const std::string &targetFileName,const std::string &password, bool compress);
     static bool unComprssAndunPack(const std::string& fileName, const std::string & folderName,const std::string& password,bool onlyUnComprss);
 
 
@@ -46,9 +46,11 @@ private slots:
     void on_restoreBtn_clicked();
 
     void bakupFolder();
+    void on_sha1checkBtn_clicked();
+
 private:
     Ui::MainWindow *ui;
-    QFutureWatcher<bool> zipWatcher;
+    QFutureWatcher<QString> zipWatcher;
     QFutureWatcher<bool> unzipWatcher;
     QTimer *backupTimer;
     QThread *backupThread;

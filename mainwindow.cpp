@@ -8,6 +8,8 @@
 #include <set>
 #include <QtConcurrent/QtConcurrent>
 #include <QDir>
+#include <QString>
+#include <QLineEdit>
 #include "utils.h"
 #include "algorithm/Huffman.h"
 
@@ -16,10 +18,11 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-
+    ui->extractPasswordEdit->setEchoMode(QLineEdit::EchoMode::Password);
+    ui->compressPasswordEdit->setEchoMode(QLineEdit::EchoMode::Password);
     ui->fileList->setSelectionMode(QAbstractItemView::ExtendedSelection);
      ui->folderList->setSelectionMode(QAbstractItemView::ExtendedSelection);
-
+    ui->sha1sumEdit->setModified(false);
      //set future watcher
      connect(&unzipWatcher, &QFutureWatcher<int>::finished, this, &MainWindow::unzipFinishedCallback);
      connect(&zipWatcher, &QFutureWatcher<int>::finished, this, &MainWindow::zipFinishedCallback);
@@ -87,38 +90,38 @@ void MainWindow::on_removeFolderBtn_clicked()
 void MainWindow::on_packFileBtn_clicked()
 {
 
+//    if(ui->fileList->count() ==0 && ui->folderList->count() ==0){
+//    QMessageBox::information(this, tr("warning"),tr("both file and folder list is empty"));
+//    }else{
+//        QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
+//                                       "untitled.tgr",
+//                                                        tr("Zip file (*.tgr)"));
 
-    if(ui->fileList->count() ==0 && ui->folderList->count() ==0){
-    QMessageBox::information(this, tr("warning"),tr("both file and folder list is empty"));
-    }else{
-        QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"),
-                                       "untitled.tgr",
-                                                        tr("Zip file (*.tgr)"));
+//        const int fileCount = ui->fileList->count();
+//        const int foldersCount = ui->folderList->count();
 
-        const int fileCount = ui->fileList->count();
-        const int foldersCount = ui->folderList->count();
-
-        //   remove same files;
-        std::vector<std::string> filesToPack;
-        std::cout<<ui->fileList->count()<<std::endl;
-        for(int i = 0;i < fileCount;i++){
-          filesToPack.push_back(ui->fileList->item(i)->text().toStdString());
-        }
+//        //   remove same files;
+//        std::vector<std::string> filesToPack;
+//        std::cout<<ui->fileList->count()<<std::endl;
+//        for(int i = 0;i < fileCount;i++){
+//          filesToPack.push_back(ui->fileList->item(i)->text().toStdString());
+//        }
 
 
-        std::vector<std::string> foldersToPack;
-        printf("vector size is %zu",filesToPack.size());
-        for(int i = 0;i < foldersCount;i++){
-            foldersToPack.push_back(ui->folderList->item(i)->text().toStdString());
-        }
-        QFuture<bool> future =  QtConcurrent::run(
-                    &packFileAndFolder,
-                    filesToPack,
-                    foldersToPack,
-                    fileName.toStdString());
-        this->zipWatcher.setFuture(future);
-    }
+//        std::vector<std::string> foldersToPack;
+//        printf("vector size is %zu",filesToPack.size());
+//        for(int i = 0;i < foldersCount;i++){
+//            foldersToPack.push_back(ui->folderList->item(i)->text().toStdString());
+//        }
+//        QFuture<bool> future =  QtConcurrent::run(
+//                    &packFileAndFolder,
+//                    filesToPack,
+//                    foldersToPack,
+//                    fileName.toStdString());
+//        this->zipWatcher.setFuture(future);
+//    }
 }
+
 
 void MainWindow::unzipFinishedCallback()
 {
@@ -131,6 +134,10 @@ void MainWindow::unzipFinishedCallback()
 
 void MainWindow::zipFinishedCallback()
 {
+    QString str =  this->zipWatcher.result();
+    auto sha1sum = getSha1sum(str);
+    this->ui->sha1sumEdit->setText(sha1sum);
+    this->ui->compressPasswordEdit->setText("");
     QMessageBox::information(this, tr("info"),tr("finish"));
 }
 
@@ -166,7 +173,7 @@ void MainWindow::on_compressFileBtn_clicked()
         }
 
         auto password = ui->compressPasswordEdit->text().toStdString();
-        QFuture<bool> future =  QtConcurrent::run(
+        QFuture<QString> future =  QtConcurrent::run(
                     &MainWindow::packAndCompress,
                     filesToPack,
                     foldersToPack,
@@ -176,12 +183,13 @@ void MainWindow::on_compressFileBtn_clicked()
 }
 
 
-bool MainWindow::packAndCompress(const std::vector<std::string> &fileList, const std::vector<std::string> &folderList, const std::string &targetFileName,const std::string &password ,bool compress)
+QString MainWindow::packAndCompress(const std::vector<std::string> &fileList, const std::vector<std::string> &folderList, const std::string &targetFileName,const std::string &password ,bool compress)
 {
     packFileAndFolder(fileList,folderList,targetFileName);
     auto zipFileName = targetFileName + ".hz";
     compressFile(targetFileName.c_str(), zipFileName.c_str(),password.size(),password.c_str());
-    return true;
+    return QString(zipFileName.c_str());
+
 }
 
 
@@ -306,4 +314,25 @@ void MainWindow::on_restoreBtn_clicked()
                 &qCopyDirectory,
                 dir,
                 restoreFolder,false);
+}
+
+void MainWindow::on_sha1checkBtn_clicked()
+{
+    auto newSha1 =  ui->sha1sumEdit->text().trimmed();
+    if(newSha1.isEmpty()){
+            QMessageBox::information(this, tr("warning"),  "sha1 is empty");
+            return;
+    }
+    QString file = QFileDialog::getOpenFileName(
+                               this,
+                               "Select one or more files to open",
+                               QDir::homePath(),
+                               "All files (*.*)");
+    auto oldSha1 = getSha1sum(file);
+    if(newSha1 == oldSha1){
+        QMessageBox::information(this, tr("info"),  "the same sha1");
+    }else {
+        QMessageBox::information(this, tr("erorr"),  "sha1 is different");
+    }
+
 }
