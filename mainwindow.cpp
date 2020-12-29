@@ -20,13 +20,14 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     ui->extractPasswordEdit->setEchoMode(QLineEdit::EchoMode::Password);
     ui->compressPasswordEdit->setEchoMode(QLineEdit::EchoMode::Password);
+    ui->userPasswordEdit->setEchoMode(QLineEdit::EchoMode::Password);
     ui->fileList->setSelectionMode(QAbstractItemView::ExtendedSelection);
      ui->folderList->setSelectionMode(QAbstractItemView::ExtendedSelection);
     ui->sha1sumEdit->setModified(false);
      //set future watcher
-     connect(&unzipWatcher, &QFutureWatcher<int>::finished, this, &MainWindow::unzipFinishedCallback);
+     connect(&unzipWatcher, &QFutureWatcher<QString>::finished, this, &MainWindow::unzipFinishedCallback);
      connect(&zipWatcher, &QFutureWatcher<int>::finished, this, &MainWindow::zipFinishedCallback);
-
+     connect(&scpWatcher,&QFutureWatcher<bool>::finished,this,&MainWindow::scpFinishedCallback);
 
      //backup thread
      this->backupThread = new QThread(this);
@@ -140,6 +141,37 @@ void MainWindow::zipFinishedCallback()
     this->ui->compressPasswordEdit->setText("");
     QMessageBox::information(this, tr("info"),tr("finish"));
 }
+
+void MainWindow::scpFinishedCallback()
+{
+    auto result = this->scpWatcher.result();
+    if(result == 0){
+         QMessageBox::information(this, tr("info"),tr("finished"));
+    }else{
+        QMessageBox::information(this, tr("warning"),tr( ("error with code: " + std::to_string(result)).c_str()));
+    }
+
+
+    ui->pushToCloudBtn->setEnabled(true);
+    ui->fetchFromCloudBtn->setEnabled(true);
+}
+
+
+QString MainWindow::buildSCP(const QString &ip, const QString &userName, const QString &password, const QString &cloudPath, const QString &localFile, bool push)
+{
+    if(push){
+        return  "sshpass -p \""+password+"\" scp -o StrictHostKeyChecking=no "+localFile+" "+userName+"@"+ip+":"+cloudPath+"\n";
+    }else {
+        return  "sshpass -p \""+password+"\" scp -o StrictHostKeyChecking=no "+userName+"@"+ip+":"+cloudPath+" "+localFile+"\n";
+    }
+}
+
+int MainWindow::scp(const QString &cmd)
+{
+    return system(cmd.toStdString().c_str());
+}
+
+
 
 
 void MainWindow::on_compressFileBtn_clicked()
@@ -335,4 +367,68 @@ void MainWindow::on_sha1checkBtn_clicked()
         QMessageBox::information(this, tr("erorr"),  "sha1 is different");
     }
 
+}
+
+void MainWindow::on_pushToCloudBtn_clicked()
+{
+
+    auto hostName = ui->ipEdit->text().trimmed();
+    auto cloudFile = ui->cloudFilePath->text().trimmed();
+    auto userName = ui->userNameEdit->text().trimmed();
+    auto userPassword = ui->userPasswordEdit->text().trimmed();
+
+
+    if(hostName.isEmpty() || cloudFile.isEmpty() || userName.isEmpty() || userPassword.isEmpty()){
+         QMessageBox::information(this, tr("warning"),  "some edit is empty");return;
+    }
+    const QString file = QFileDialog::getOpenFileName(
+                               this,
+                               "Select one or more files to open",
+                               QDir::homePath(),
+                               "All files (*.*)");
+
+    //
+
+    const QString cmdString = buildSCP(hostName,userName,userPassword,cloudFile,file, true);
+    //what's wrong
+       std::cout<<cmdString.toStdString();
+       std::cout.flush();
+    QFuture<int> future =  QtConcurrent::run(
+               &MainWindow::scp,
+               cmdString);
+    this->scpWatcher.setFuture(future);
+
+    ui->pushToCloudBtn->setEnabled(false);
+    ui->fetchFromCloudBtn->setEnabled(false);
+//    this->scpWatcher.setFuture(future);
+}
+
+
+void MainWindow::on_fetchFromCloudBtn_clicked()
+{
+    auto hostName = ui->ipEdit->text().trimmed();
+    auto cloudFile = ui->cloudFilePath->text().trimmed();
+    auto userName = ui->userNameEdit->text().trimmed();
+    auto userPassword = ui->userPasswordEdit->text().trimmed();
+
+
+    if(hostName.isEmpty() || cloudFile.isEmpty() || userName.isEmpty() || userPassword.isEmpty()){
+         QMessageBox::information(this, tr("warning"),  "some edit is empty");return;
+    }
+
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Open Directory"),
+                                                          QDir::homePath(),
+                                                          QFileDialog::ShowDirsOnly
+                                                          | QFileDialog::DontResolveSymlinks);
+
+    const QString cmdString = buildSCP(hostName,userName,userPassword,cloudFile,dir, false);
+    //what's wrong
+       std::cout<<cmdString.toStdString();
+       std::cout.flush();
+    QFuture<int> future =  QtConcurrent::run(
+               &MainWindow::scp,
+               cmdString);
+    this->scpWatcher.setFuture(future);
+        ui->pushToCloudBtn->setEnabled(false);
+    ui->fetchFromCloudBtn->setEnabled(false);
 }
