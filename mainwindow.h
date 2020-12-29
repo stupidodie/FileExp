@@ -33,7 +33,8 @@ private slots:
 
     static QString packAndCompress(const std::vector<std::string> &fileList,const std::vector<std::string> &folderList, const std::string &targetFileName,const std::string &password, bool compress);
     static bool unComprssAndunPack(const std::string& fileName, const std::string & folderName,const std::string& password,bool onlyUnComprss);
-
+    static QString buildSCP(const QString& ip,const QString& userName, const QString& password, const QString& cloudPath,const QString& localFile,bool push);
+    static int scp(const QString& cmd);
 
     void on_openZipFileBtn_clicked();
 
@@ -48,13 +49,20 @@ private slots:
     void bakupFolder();
     void on_sha1checkBtn_clicked();
 
+    void on_pushToCloudBtn_clicked();
+
+    void on_fetchFromCloudBtn_clicked();
+
 private:
     Ui::MainWindow *ui;
     QFutureWatcher<QString> zipWatcher;
     QFutureWatcher<bool> unzipWatcher;
+    QFutureWatcher<int> scpWatcher;
     QTimer *backupTimer;
     QThread *backupThread;
     void unzipFinishedCallback();
     void zipFinishedCallback();
+    void scpFinishedCallback();
+
 };
 #endif // MAINWINDOW_H
